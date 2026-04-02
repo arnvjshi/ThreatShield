@@ -20,9 +20,9 @@ def get_db_service(request: Request) -> DBService:
 
 @router.get("")
 async def list_events(
-    threat_level: Annotated[str | None, Query(default=None)] = None,
-    limit: Annotated[int, Query(default=50, ge=1, le=200)] = 50,
     db_service: Annotated[DBService, Depends(get_db_service)],
+    threat_level: Annotated[str | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ):
     return await db_service.list_events(threat_level=threat_level, limit=limit)
 
