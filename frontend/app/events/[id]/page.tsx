@@ -26,9 +26,7 @@ export default async function EventDetailPage({ params }: Readonly<{ params: Pro
             <h1 className="mt-4 text-3xl font-semibold text-white">Event details</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">{eventData.summary}</p>
           </div>
-          {eventData.thumbnail_url ? (
-            <img src={`${process.env.NEXT_PUBLIC_BACKEND_HTTP_URL ?? 'http://localhost:8000'}${eventData.thumbnail_url}`} alt="Event thumbnail" className="aspect-video w-full rounded-2xl border border-white/10 object-cover shadow-glass" />
-          ) : null}
+          <img src={`${process.env.NEXT_PUBLIC_BACKEND_HTTP_URL ?? 'http://localhost:8000'}/events/${eventData._id}/thumbnail`} alt="Event thumbnail" className="aspect-video w-full rounded-2xl border border-white/10 object-cover shadow-glass" />
           <VideoPlayer src={eventData.video_url} />
         </section>
         <aside className="space-y-6">

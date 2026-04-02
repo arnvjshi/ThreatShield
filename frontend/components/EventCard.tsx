@@ -5,16 +5,14 @@ import { ThreatBadge } from './ThreatBadge';
 
 const BACKEND_HTTP_URL = process.env.NEXT_PUBLIC_BACKEND_HTTP_URL || 'http://localhost:8000';
 
-export function EventCard({ event }: { event: ThreatEvent }) {
-  const thumbnailSrc = event.thumbnail_url ? `${BACKEND_HTTP_URL}${event.thumbnail_url}` : '';
+export function EventCard({ event }: Readonly<{ event: ThreatEvent }>) {
+  const thumbnailSrc = `${BACKEND_HTTP_URL}/events/${event._id}/thumbnail`;
 
   return (
     <Link href={`/events/${event._id}`} className="glass-card subtle-ring block p-5 transition duration-200 hover:-translate-y-0.5 hover:border-accent/30">
-      {thumbnailSrc ? (
-        <div className="mb-4 overflow-hidden rounded-2xl border border-white/10 bg-black/50">
-          <img src={thumbnailSrc} alt="Event thumbnail" className="aspect-video w-full object-cover" />
-        </div>
-      ) : null}
+      <div className="mb-4 overflow-hidden rounded-2xl border border-white/10 bg-black/50">
+        <img src={thumbnailSrc} alt="Event thumbnail" className="aspect-video w-full object-cover" />
+      </div>
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
