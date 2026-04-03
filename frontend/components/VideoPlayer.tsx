@@ -23,7 +23,8 @@ function resolveVideoSrc(src: string): string {
 export function VideoPlayer({ src }: Readonly<{ src: string }>) {
   const resolvedSrc = resolveVideoSrc(src);
   return (
-    <video className="aspect-video w-full rounded-2xl border border-white/10 bg-black/60 shadow-glass" controls playsInline preload="metadata" src={resolvedSrc}>
+    <video className="aspect-video w-full rounded-2xl border border-white/10 bg-black/60 shadow-glass" controls playsInline preload="auto">
+      <source src={resolvedSrc} type="video/mp4" />
       <track kind="captions" label="English captions" srcLang="en" default />
       Your browser does not support the video element.
     </video>

@@ -12,18 +12,38 @@ export function LiveStreamCanvas() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const socket = new WebSocket(`${wsBase}/stream`);
-    socket.onopen = () => setConnected(true);
-    socket.onclose = () => setConnected(false);
-    socket.onmessage = (event) => {
+    let socket: WebSocket | null = null;
+    let cancelled = false;
+
+    const connect = async () => {
       try {
-        setStream(JSON.parse(event.data) as StreamMessage);
+        const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_HTTP_URL ?? 'http://localhost:8000'}/health`, { cache: 'no-store' });
+        if (!healthResponse.ok || cancelled) {
+          return;
+        }
+
+        socket = new WebSocket(`${wsBase}/stream`);
+        socket.onopen = () => setConnected(true);
+        socket.onclose = () => setConnected(false);
+        socket.onmessage = (event) => {
+          try {
+            setStream(JSON.parse(event.data) as StreamMessage);
+          } catch {
+            // Ignore malformed messages.
+          }
+        };
       } catch {
-        // Ignore malformed messages.
+        if (!cancelled) {
+          setConnected(false);
+        }
       }
     };
+
+    void connect();
+
     return () => {
-      socket.close();
+      cancelled = true;
+      socket?.close();
     };
   }, []);
 

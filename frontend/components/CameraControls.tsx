@@ -10,21 +10,33 @@ export function CameraControls(): Readonly<JSX.Element> {
   const [running, setRunning] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [error, setError] = useState('');
+  const [source, setSource] = useState('0');
 
   useEffect(() => {
-    // Load email from localStorage
-    if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
-      const email = globalThis.localStorage.getItem('userEmail') || '';
-      setUserEmail(email);
-    }
+    const loadState = async () => {
+      if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
+        const email = globalThis.localStorage.getItem('userEmail') || '';
+        setUserEmail(email);
+      }
+
+      try {
+        const response = await fetch(`${BACKEND_HTTP_URL}/status`, { cache: 'no-store' });
+        if (response.ok) {
+          const status = (await response.json()) as { running: boolean; source?: string | null };
+          setRunning(status.running);
+          if (status.source) {
+            setSource(status.source);
+          }
+        }
+      } catch {
+        setError('Unable to reach the camera backend');
+      }
+    };
+
+    void loadState();
   }, []);
 
   const handleStart = async () => {
-    if (!userEmail) {
-      setError('Please register first to start the camera');
-      return;
-    }
-
     setLoading(true);
     setError('');
 
@@ -33,18 +45,24 @@ export function CameraControls(): Readonly<JSX.Element> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          source: '0',
+          source,
           owner_email: userEmail,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start camera');
+        const detail = await response.json().catch(() => null);
+        throw new Error(detail?.detail || 'Failed to start camera');
       }
 
-      setRunning(true);
+      const status = (await response.json()) as { running: boolean; source?: string | null };
+      setRunning(status.running);
+      if (status.source) {
+        setSource(status.source);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start camera');
+      setRunning(false);
     } finally {
       setLoading(false);
     }
@@ -61,10 +79,12 @@ export function CameraControls(): Readonly<JSX.Element> {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to stop camera');
+        const detail = await response.json().catch(() => null);
+        throw new Error(detail?.detail || 'Failed to stop camera');
       }
 
-      setRunning(false);
+      const status = (await response.json()) as { running: boolean };
+      setRunning(status.running);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to stop camera');
     } finally {
@@ -86,29 +106,40 @@ export function CameraControls(): Readonly<JSX.Element> {
         </div>
       )}
 
+      <div className="space-y-2">
+        <label className="block text-xs font-medium uppercase tracking-[0.2em] text-slate-400" htmlFor="camera-source">
+          Camera source
+        </label>
+        <input
+          id="camera-source"
+          value={source}
+          onChange={(event) => setSource(event.currentTarget.value)}
+          placeholder="0"
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+        />
+      </div>
+
       <button
         onClick={handleStart}
-        disabled={loading || running || !userEmail}
+        disabled={loading || running}
         className={clsx(
           'w-full py-2 px-4 rounded-lg font-medium transition-all duration-200',
-          running || !userEmail
+          running
             ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
             : 'bg-cyan-600 hover:bg-cyan-700 text-white',
           'focus:outline-none focus:ring-2 focus:ring-cyan-500',
           loading && 'opacity-50'
         )}
       >
-        {loading && running === false ? 'Starting...' : 'Start camera'}
+        {loading && !running ? 'Starting...' : 'Start camera'}
       </button>
 
       <button
         onClick={handleStop}
-        disabled={loading || !running}
+        disabled={loading}
         className={clsx(
           'w-full py-2 px-4 rounded-lg font-medium transition-all duration-200',
-          !running
-            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-            : 'bg-red-600 hover:bg-red-700 text-white',
+          running ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-700 text-gray-400',
           'focus:outline-none focus:ring-2 focus:ring-red-500',
           loading && 'opacity-50'
         )}

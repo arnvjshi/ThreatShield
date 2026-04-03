@@ -20,6 +20,14 @@ class ClipService:
         self.pre_event_seconds = pre_event_seconds
         self.post_event_seconds = post_event_seconds
 
+    def _open_writer(self, clip_path: Path, fps: int, width: int, height: int) -> cv2.VideoWriter | None:
+        for codec in ("avc1", "H264", "mp4v"):
+            writer = cv2.VideoWriter(str(clip_path), cv2.VideoWriter_fourcc(*codec), float(fps), (width, height))
+            if writer.isOpened():
+                return writer
+            writer.release()
+        return None
+
     def make_buffer(self, fps: int) -> deque[FramePacket]:
         maxlen = max(1, fps * self.pre_event_seconds)
         return deque(maxlen=maxlen)
@@ -37,7 +45,9 @@ class ClipService:
 
         height, width = frames[0].frame.shape[:2]
         clip_path = self.output_dir / f"{event_id}.mp4"
-        writer = cv2.VideoWriter(str(clip_path), cv2.VideoWriter_fourcc(*"mp4v"), float(fps), (width, height))
+        writer = self._open_writer(clip_path, fps, width, height)
+        if writer is None:
+            return ""
         for packet in frames:
             writer.write(packet.frame)
         writer.release()
