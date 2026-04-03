@@ -10,7 +10,7 @@ function buildTemplate({ email, summary, threat_level, video_url, timestamp }) {
       <p><strong>Recipient:</strong> ${email}</p>
       <p><strong>Threat Level:</strong> ${threat_level}</p>
       <p><strong>Timestamp:</strong> ${timestamp || new Date().toISOString()}</p>
-      <p><strong>Summary:</strong><br />${summary}</p>
+      <p><strong>Summary:</strong><br />${summary.replace(/\n/g, "<br />")}</p>
       <p><strong>Video Clip:</strong> <a href="${video_url}">${video_url}</a></p>
     </div>
   `;
