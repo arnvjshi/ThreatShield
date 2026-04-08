@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ReactNode, useEffect, useState } from 'react';
-import { BarChart3, Menu, Shield, UserRound, LayoutDashboard, Sparkles } from 'lucide-react';
+import { BarChart3, Menu, Shield, UserRound, LayoutDashboard, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -11,7 +11,7 @@ const navItems = [
 ];
 
 export function DashboardShell({ children }: Readonly<{ children: ReactNode }>) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -33,13 +33,13 @@ export function DashboardShell({ children }: Readonly<{ children: ReactNode }>) 
             type="button"
             onClick={() => {
               if (globalThis.innerWidth >= 1024) {
-                setCollapsed((value) => !value);
+                setHidden((value) => !value);
                 return;
               }
               setMobileOpen((value) => !value);
             }}
             className="control-button px-3 py-2 text-xs"
-            aria-expanded={collapsed || mobileOpen}
+            aria-expanded={hidden === false || mobileOpen}
             aria-label="Toggle navigation"
           >
             <Menu className="h-4 w-4" />
@@ -64,10 +64,20 @@ export function DashboardShell({ children }: Readonly<{ children: ReactNode }>) 
       </div>
 
       <div className="mx-auto flex min-h-[calc(100vh-57px)] max-w-7xl gap-6 px-4 py-4 lg:px-8">
+        <button
+          type="button"
+          onClick={() => setHidden((value) => !value)}
+          className="fixed left-0 top-1/2 z-30 hidden -translate-y-1/2 rounded-r-xl border border-white/10 bg-[rgba(10,14,20,0.92)] p-2 text-slate-200 shadow-glass backdrop-blur lg:inline-flex"
+          aria-label={hidden ? 'Show navigation panel' : 'Hide navigation panel'}
+        >
+          <ChevronRight className={`h-4 w-4 ${hidden ? '' : 'hidden'}`} />
+          <ChevronLeft className={`h-4 w-4 ${hidden ? 'hidden' : ''}`} />
+        </button>
+
         <aside
-          className={`glass-card fixed bottom-4 left-4 top-[73px] z-20 w-[280px] flex-col p-4 transition-transform duration-200 lg:static lg:flex lg:translate-x-0 ${
-            mobileOpen ? 'translate-x-0' : '-translate-x-[120%] lg:translate-x-0'
-          } ${collapsed ? 'lg:w-20' : 'lg:w-72'}`}
+          className={`glass-card fixed bottom-4 left-4 top-[73px] z-20 w-[280px] flex-col p-4 transition-transform duration-200 ${
+            mobileOpen ? 'translate-x-0' : '-translate-x-[120%]'
+          } ${hidden ? 'lg:hidden' : 'lg:static lg:flex lg:translate-x-0 lg:w-72'}`}
         >
           <nav className="space-y-2 text-sm text-slate-300">
             {navItems.map((item) => (
@@ -80,11 +90,11 @@ export function DashboardShell({ children }: Readonly<{ children: ReactNode }>) 
                 <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-black/20 text-white/90">
                   <item.icon className="h-4 w-4" />
                 </span>
-                <span className={`${collapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                <span>{item.label}</span>
               </Link>
             ))}
           </nav>
-          <div className={`mt-auto rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300 ${collapsed ? 'lg:hidden' : ''}`}>
+          <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
             Alerting, events, and user profile in one place.
           </div>
         </aside>

@@ -22,11 +22,15 @@ class Settings(BaseSettings):
     yolo_confidence: float = 0.4
     anomaly_threshold: float = 0.45
     event_threshold: float = 0.7
-    pre_event_seconds: int = 6
-    post_event_seconds: int = 4
+    anomaly_group_window_seconds: int = 120
+    pre_event_seconds: int = 30
+    post_event_seconds: int = 30
     clip_output_dir: str = "./storage/clips"
     frame_width: int = 1280
     frame_height: int = 720
+    stream_target_fps: int = 12
+    stream_jpeg_quality: int = 75
+    snapshot_request_timeout_seconds: float = 1.2
 
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.1"

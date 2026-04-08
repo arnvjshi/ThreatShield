@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
+import shutil
+import subprocess
+import tempfile
 from typing import Iterable
 
 import cv2
@@ -37,11 +40,62 @@ class ClipService:
 
         height, width = frames[0].frame.shape[:2]
         clip_path = self.output_dir / f"{event_id}.mp4"
-        writer = cv2.VideoWriter(str(clip_path), cv2.VideoWriter_fourcc(*"mp4v"), float(fps), (width, height))
+        writer_fps = self._estimate_fps(frames, fallback_fps=fps)
+        temp_path = self.output_dir / f"{event_id}.tmp.mp4"
+        writer = cv2.VideoWriter(str(temp_path), cv2.VideoWriter_fourcc(*"mp4v"), float(writer_fps), (width, height))
         for packet in frames:
             writer.write(packet.frame)
         writer.release()
+
+        ffmpeg_path = shutil.which("ffmpeg")
+        if not ffmpeg_path:
+            temp_path.replace(clip_path)
+            return str(clip_path)
+
+        command = [
+            ffmpeg_path,
+            "-y",
+            "-i",
+            str(temp_path),
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
+            str(clip_path),
+        ]
+        completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        if completed.returncode != 0 or not clip_path.exists():
+            temp_path.replace(clip_path)
+        else:
+            temp_path.unlink(missing_ok=True)
+
         return str(clip_path)
+
+    @staticmethod
+    def _estimate_fps(frames: list[FramePacket], fallback_fps: int) -> float:
+        if len(frames) < 2:
+            return float(max(1, fallback_fps))
+
+        deltas = [
+            current.timestamp - previous.timestamp
+            for previous, current in zip(frames, frames[1:])
+            if current.timestamp > previous.timestamp
+        ]
+
+        if not deltas:
+            return float(max(1, fallback_fps))
+
+        # Median delta is stable against occasional stalls/spikes.
+        median_delta = float(np.median(np.array(deltas)))
+        if median_delta <= 0:
+            return float(max(1, fallback_fps))
+
+        estimated_fps = 1.0 / median_delta
+        return float(np.clip(estimated_fps, 1.0, 30.0))
 
     def save_thumbnail(self, frames: Iterable[FramePacket], event_id: str) -> str:
         frame_list = list(frames)

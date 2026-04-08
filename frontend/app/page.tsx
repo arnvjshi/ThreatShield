@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { DashboardShell } from '@/components/DashboardShell';
 import { LiveStreamCanvas } from '@/components/LiveStreamCanvas';
@@ -44,11 +45,22 @@ function StatusWidget({ onClose }: Readonly<{ onClose: () => void }>) {
 
 export default function DashboardPage() {
   const [statusOpen, setStatusOpen] = useState(false);
+  const [controlsHidden, setControlsHidden] = useState(false);
 
   return (
     <DashboardShell>
       <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[rgba(10,14,20,0.65)] p-5 shadow-glass sm:p-6">
         <ThreeBackground />
+
+        <button
+          type="button"
+          onClick={() => setControlsHidden((value) => !value)}
+          className="fixed right-0 top-1/2 z-30 -translate-y-1/2 rounded-l-xl border border-white/10 bg-[rgba(10,14,20,0.92)] p-2 text-slate-200 shadow-glass backdrop-blur"
+          aria-label={controlsHidden ? 'Show controls panel' : 'Hide controls panel'}
+        >
+          <ChevronLeft className={`h-4 w-4 ${controlsHidden ? '' : 'hidden'}`} />
+          <ChevronRight className={`h-4 w-4 ${controlsHidden ? 'hidden' : ''}`} />
+        </button>
 
         <div className="relative z-10 space-y-6">
           <header className="glass-card subtle-ring flex flex-wrap items-center justify-between gap-3 p-5">
@@ -66,12 +78,12 @@ export default function DashboardPage() {
             </div>
           </header>
 
-          <div className="grid gap-6 xl:grid-cols-[1.55fr_0.95fr]">
+          <div className={`grid gap-6 ${controlsHidden ? 'xl:grid-cols-1' : 'xl:grid-cols-[1.55fr_0.95fr]'}`}>
             <section className="space-y-6">
               <LiveStreamCanvas />
             </section>
 
-            <aside className="space-y-6">
+            <aside className={`space-y-6 ${controlsHidden ? 'hidden' : ''}`}>
               <div className="glass-card subtle-ring p-6">
                 <p className="metric-label">Controls</p>
                 <div className="mt-4">

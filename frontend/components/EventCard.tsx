@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { ThreatEvent } from '../lib/types';
+import { formatToIst } from '../lib/time';
 import { ThreatBadge } from './ThreatBadge';
 
 const BACKEND_HTTP_URL = process.env.NEXT_PUBLIC_BACKEND_HTTP_URL || 'http://localhost:8000';
@@ -18,7 +19,7 @@ export function EventCard({ event }: Readonly<{ event: ThreatEvent }>) {
           <div className="flex items-center gap-3">
             <ThreatBadge level={event.threat_level} />
             <span className="text-xs uppercase tracking-[0.24em] text-slate-400">
-              {new Date(event.timestamp).toLocaleString()}
+              {formatToIst(event.timestamp)} IST
             </span>
           </div>
           <p className="mt-4 text-sm leading-6 text-slate-200">{event.summary}</p>

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 from bson import ObjectId
@@ -42,4 +43,11 @@ class DBService:
         if not document:
             return {}
         document["_id"] = str(document["_id"])
+
+        timestamp = document.get("timestamp")
+        if isinstance(timestamp, datetime):
+            # MongoDB often returns naive UTC datetimes unless tz-aware options are enabled.
+            normalized = timestamp.replace(tzinfo=timezone.utc) if timestamp.tzinfo is None else timestamp.astimezone(timezone.utc)
+            document["timestamp"] = normalized.isoformat()
+
         return document

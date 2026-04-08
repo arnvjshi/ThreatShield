@@ -4,7 +4,7 @@ import { DashboardShell } from '@/components/DashboardShell';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { fetchEvent } from '@/lib/api';
 import { ThreatBadge } from '@/components/ThreatBadge';
-import type { ThreatEvent } from '@/lib/types';
+import { formatToIst } from '@/lib/time';
 
 export default async function EventDetailPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
@@ -12,7 +12,7 @@ export default async function EventDetailPage({ params }: Readonly<{ params: Pro
   if (!event) {
     notFound();
   }
-  const eventData = event as ThreatEvent;
+  const eventData = event;
 
   return (
     <DashboardShell>
@@ -21,7 +21,7 @@ export default async function EventDetailPage({ params }: Readonly<{ params: Pro
           <div className="glass-card subtle-ring p-6">
             <div className="flex flex-wrap items-center gap-3">
               <ThreatBadge level={eventData.threat_level} />
-              <span className="text-xs uppercase tracking-[0.24em] text-slate-400">{new Date(eventData.timestamp).toLocaleString()}</span>
+              <span className="text-xs uppercase tracking-[0.24em] text-slate-400">{formatToIst(eventData.timestamp)} IST</span>
             </div>
             <h1 className="mt-4 text-3xl font-semibold text-white">Event details</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">{eventData.summary}</p>

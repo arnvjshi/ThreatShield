@@ -74,6 +74,8 @@ MAILER_SERVICE_URL=http://localhost:5001/send-alert
 ```env
 NEXT_PUBLIC_BACKEND_HTTP_URL=http://localhost:8000
 NEXT_PUBLIC_BACKEND_WS_URL=ws://localhost:8000
+NEXT_PUBLIC_DEFAULT_CAMERA_SOURCE=http://192.168.1.50:81/stream
+NEXT_PUBLIC_DEFAULT_ESP32_BASE_URL=http://esp32cam.local
 ```
 
 **mailer-service/.env:**
@@ -127,6 +129,31 @@ npm start
 ### Camera Control
 - `POST /start` - Start camera (requires: source, owner_email)
 - `POST /stop` - Stop camera
+
+## ESP32-CAM Streaming
+
+The backend uses OpenCV, so it can read an ESP32-CAM stream directly if the camera exposes an MJPEG URL such as:
+
+```text
+http://192.168.1.50:81/stream
+```
+
+Use that URL in the dashboard camera source field, or set `NEXT_PUBLIC_DEFAULT_CAMERA_SOURCE` in `frontend/.env.local` to prefill it.
+
+If you are using the flash LED on the ESP32-CAM, choose `ESP32-CAM` in the dashboard controls. The app will use `GET/POST http://<device-ip>/stream` for video and `POST http://<device-ip>/flash` when the anomaly score goes above `0.30`.
+
+### Dynamic WiFi and Camera Settings
+
+If you want the ESP32 credentials to be dynamic, use the Arduino sketch in [hardware/esp32-cam/ESP32CAM_Dynamic.ino](hardware/esp32-cam/ESP32CAM_Dynamic.ino). It stores the WiFi SSID and password on the device with `Preferences`, so you can change them from the ESP32 web page without reflashing.
+
+The sketch also enables mDNS with hostname `esp32cam.local`, so you can use `http://esp32cam.local` instead of a changing DHCP IP.
+
+The frontend camera source is already dynamic through the dashboard controls:
+- `Normal camera / webcam` uses a numeric camera source like `0` or `1`
+- `ESP32-CAM` uses a base URL like `http://192.168.1.50`
+- Recommended: `http://esp32cam.local` for dynamic IP environments
+
+The app then derives the stream and flash endpoints automatically from that base URL.
 
 ### Events
 - `GET /events` - List all detected events (filter by threat_level)

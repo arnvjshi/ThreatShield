@@ -52,6 +52,8 @@ class PipelineStatus(BaseModel):
 class ControlRequest(BaseModel):
     source: str | None = None
     owner_email: str = ""  # Email of the user starting this camera
+    camera_mode: str = "normal"
+    flash_url: str = ""
 
 
 class UserRegister(BaseModel):

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from starlette.websockets import WebSocketState
 
 from app.services.video_stream import StreamHub
 
@@ -21,5 +20,3 @@ async def stream_socket(websocket: WebSocket):
         pass
     finally:
         await hub.unregister(websocket)
-        if websocket.application_state != WebSocketState.DISCONNECTED:
-            await websocket.close()
