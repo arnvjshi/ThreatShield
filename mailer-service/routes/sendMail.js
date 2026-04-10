@@ -3,15 +3,34 @@ const { createTransporter } = require('../config/transporter');
 
 const router = express.Router();
 
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatMultiline(value = '') {
+  return escapeHtml(value).replace(/\r?\n/g, '<br />');
+}
+
 function buildTemplate({ email, summary, threat_level, video_url, timestamp }) {
+  const safeEmail = escapeHtml(email);
+  const safeThreatLevel = escapeHtml(threat_level);
+  const safeTimestamp = escapeHtml(timestamp || new Date().toISOString());
+  const safeSummary = formatMultiline(summary);
+  const safeVideoUrl = escapeHtml(video_url || '');
+
   return `
     <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6;">
       <h2 style="margin: 0 0 16px; color: #0f172a;">Threat Detected</h2>
-      <p><strong>Recipient:</strong> ${email}</p>
-      <p><strong>Threat Level:</strong> ${threat_level}</p>
-      <p><strong>Timestamp:</strong> ${timestamp || new Date().toISOString()}</p>
-      <p><strong>Summary:</strong><br />${summary}</p>
-      <p><strong>Video Clip:</strong> <a href="${video_url}">${video_url}</a></p>
+      <p><strong>Recipient:</strong> ${safeEmail}</p>
+      <p><strong>Threat Level:</strong> ${safeThreatLevel}</p>
+      <p><strong>Timestamp:</strong> ${safeTimestamp}</p>
+      <p><strong>Summary:</strong><br />${safeSummary}</p>
+      <p><strong>Video Clip:</strong> <a href="${safeVideoUrl}">${safeVideoUrl}</a></p>
     </div>
   `;
 }

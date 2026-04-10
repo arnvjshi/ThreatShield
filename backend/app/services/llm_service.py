@@ -70,7 +70,31 @@ class LLMService:
         )
 
     def _parse_response(self, text: str) -> SummaryPayload:
-        lines = [line.strip("- ") for line in text.splitlines() if line.strip()]
-        summary = lines[0] if lines else text.strip()
-        escalation_steps = " ".join(lines[1:]) if len(lines) > 1 else "Escalate to on-duty security staff."
-        return SummaryPayload(summary=summary, escalation_steps=escalation_steps)
+        
+        raw_lines = [line.rstrip() for line in text.splitlines()]
+        cleaned_lines = [line.strip() for line in raw_lines if line.strip()]
+        if not cleaned_lines:
+            return SummaryPayload(
+                summary="Suspicious activity detected.",
+                escalation_steps="Escalate to on-duty security staff.",
+            )
+
+        escalation_index = next(
+            (
+                idx
+                for idx, line in enumerate(cleaned_lines)
+                if line.lower().startswith(("escalation", "recommended action", "action"))
+            ),
+            -1,
+        )
+
+        if escalation_index == -1:
+            summary_text = "\n".join(cleaned_lines)
+            escalation_text = "Escalate to on-duty security staff."
+        else:
+            summary_block = cleaned_lines[:escalation_index]
+            escalation_block = cleaned_lines[escalation_index:]
+            summary_text = "\n".join(summary_block).strip() or cleaned_lines[0]
+            escalation_text = " ".join(escalation_block).strip()
+
+        return SummaryPayload(summary=summary_text, escalation_steps=escalation_text)
