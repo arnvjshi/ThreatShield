@@ -70,7 +70,62 @@ class LLMService:
         )
 
     def _parse_response(self, text: str) -> SummaryPayload:
-        lines = [line.strip("- ") for line in text.splitlines() if line.strip()]
-        summary = lines[0] if lines else text.strip()
-        escalation_steps = " ".join(lines[1:]) if len(lines) > 1 else "Escalate to on-duty security staff."
-        return SummaryPayload(summary=summary, escalation_steps=escalation_steps)
+        """Parse LLM response to extract summary and escalation steps."""
+        # Remove common intro phrases
+        text = text.strip()
+        intro_phrases = [
+            "here is a summary of the security event:",
+            "here's a summary of the security event:",
+            "security event summary:",
+        ]
+        for phrase in intro_phrases:
+            if text.lower().startswith(phrase):
+                text = text[len(phrase):].strip()
+        
+        # Split by common section headers
+        sections = {}
+        current_section = "summary"
+        current_content = []
+        
+        for line in text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            
+            lower_line = line.lower()
+            if any(keyword in lower_line for keyword in ["scene summary:", "summary:", "**scene summary**"]):
+                if current_content:
+                    sections[current_section] = " ".join(current_content).strip()
+                current_section = "summary"
+                current_content = [line.split(":", 1)[-1].strip()] if ":" in line else []
+            elif any(keyword in lower_line for keyword in ["threat explanation:", "threat:", "**threat explanation**"]):
+                if current_content:
+                    sections[current_section] = " ".join(current_content).strip()
+                current_section = "threat"
+                current_content = [line.split(":", 1)[-1].strip()] if ":" in line else []
+            elif any(keyword in lower_line for keyword in ["escalation steps:", "escalation:", "**escalation**"]):
+                if current_content:
+                    sections[current_section] = " ".join(current_content).strip()
+                current_section = "escalation"
+                current_content = [line.split(":", 1)[-1].strip()] if ":" in line else []
+            else:
+                # Remove markdown formatting
+                clean_line = line.replace("**", "").replace("*", "").strip("- ")
+                if clean_line:
+                    current_content.append(clean_line)
+        
+        # Store last section
+        if current_content:
+            sections[current_section] = " ".join(current_content).strip()
+        
+        # Build summary combining scene and threat
+        summary_parts = []
+        if sections.get("summary"):
+            summary_parts.append(sections["summary"])
+        if sections.get("threat"):
+            summary_parts.append(sections["threat"])
+        
+        summary = " ".join(summary_parts).strip() if summary_parts else text.strip()
+        escalation_steps = sections.get("escalation", "Escalate to on-duty security staff.").strip()
+        
+        return SummaryPayload(summary=summary or text, escalation_steps=escalation_steps)
